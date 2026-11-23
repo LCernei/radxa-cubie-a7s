@@ -16,7 +16,7 @@
 - [ ] Acceptance list (step 7), especially 6.40 on paper and a scan
 - [x] AirSane on the board ([0009](decisions/0009-airsane.md)); the "before" measurement was skipped by the user's choice
 - [ ] AirSane: the phantom ADF locks the scanner; report it to sane-backends ([0011](decisions/0011-no-adf-workaround.md))
-- [ ] Phone printing works but is finicky on the Pixel (see the open issue below)
+- [x] Phone printing and scanning: Mopria works fine on the Pixel; the built-in Default Print Service is finicky
 - [x] Confirm CPU idle on real hardware: `verify.yml` shows a cpuidle driver (`psci_idle`)
 
 ### Open issues (from 2026-11-23)
@@ -27,13 +27,14 @@
   patch ([0011](decisions/0011-no-adf-workaround.md)). Sleep is not a trigger (measured).
   Next: report upstream (draft: `docs/upstream-pixma-adf.md`, not committed), then turn off the
   debug logging: `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
-- **Android print "printer isn't available"** (Pixel 8, Android 17, Default Print Service): it finds
+- **Android print "printer isn't available"** (worked around: use Mopria) (Pixel 8, Android 17, Default Print Service): it finds
   the queue and its options, but greys out Print. CUPS logged `Unable to encrypt connection` at the
   same moment. After clearing the Default Print Service's storage it printed (20:11, `Print-Job`
   `successful-ok` in `access_log`), but only after reopening the print dialog: finicky. CUPS logged
   no errors for the failed attempts, so the cause is on the phone side (hypothesis: Android greys the
-  printer out until its status check or mDNS answer arrives). Next: try Mopria Print Service; try
-  another phone; only if `error_log` shows TLS errors at a failure, consider not advertising IPPS.
+  printer out until its status check or mDNS answer arrives). Mopria (print and scan) works fine
+  on the same phone (user, 2026-11-23): recommended on Android. Only if `error_log` shows TLS errors
+  at a failure, consider not advertising IPPS.
 
 ## 3. Cooling (one change per measurement)
 
