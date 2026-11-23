@@ -1,0 +1,16 @@
+---
+# The whole difference between a fresh image and this server.
+- name: Configure the print and scan server
+  hosts: print_server
+  pre_tasks:
+    # rsetup deletes before.txt last. Until then it holds the dpkg lock and replaces SSH host keys.
+    - name: Wait for the image's first-boot setup to finish
+      ansible.builtin.wait_for:
+        path: /config/before.txt
+        state: absent
+        timeout: 900
+        sleep: 5
+  roles:
+    - base
+    - printing
+    - scanning

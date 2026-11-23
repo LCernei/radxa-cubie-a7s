@@ -1,0 +1,44 @@
+---
+base_hostname: radxa-cubie-a7s
+base_timezone: Etc/UTC # override in host_vars/cubie.yml
+
+# GitHub users whose public keys may log in (ssh-import-id-gh, docs/decisions/0008).
+# Keys from anyone else are removed. Set in host_vars/cubie.yml (not in git), see the .example.
+base_github_users: []
+
+base_packages:
+  - btop
+  - etckeeper
+  - git
+  - neovim
+  - ssh-import-id
+  - unattended-upgrades
+
+# Never upgraded implicitly: boot and WiFi depend on them (docs/decisions/0004).
+base_board_packages:
+  - linux-image-radxa-a733
+  - linux-headers-radxa-a733
+  - u-boot-radxa-a733
+  - u-boot-dlan17
+  - aic8800-usb-dkms
+
+base_unneeded_services:
+  - bluetooth.service
+  - hdmi-toggle-once.service
+  - lightdm.service
+  - nmbd.service
+  - smbd.service
+
+printing_canon_version: "6.40-1.05"
+printing_canon_url: https://gdlp01.c-wss.com/gds/8/0100007658/51/linux-UFRII-drv-v640-m17n-05.tar.gz
+printing_canon_sha256: ff69c541b9e12df716fa649cb5307839bb2a4d9ba05dd93b81435df1f60c7834
+printing_queue: radxa
+printing_description: Canon i-SENSYS MF4320d
+printing_uri: "cnusbufr2:/dev/usb/lp0"
+printing_ppd: CNRCUPSMF4350ZK.ppd
+printing_page_size: A4
+
+scanning_version: "3.3.0"
+scanning_url: "https://github.com/sbs20/scanservjs/releases/download/v3.3.0/scanservjs_3.3.0-1_all.deb"
+scanning_sha256: d57a26fa6472651ac5c780a4057ae944361cfcaa7c0b6d07a7856e7ef6b15f75
+scanning_ocr_languages: [eng, ron, rus]

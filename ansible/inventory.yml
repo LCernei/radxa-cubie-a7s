@@ -1,0 +1,9 @@
+---
+all:
+  children:
+    print_server:
+      hosts:
+        cubie:
+          # mDNS is sometimes flaky; override with: -e ansible_host=<ip>
+          ansible_host: radxa-cubie-a7s.local
+          ansible_user: radxa

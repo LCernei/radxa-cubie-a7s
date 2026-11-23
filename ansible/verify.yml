@@ -1,0 +1,42 @@
+---
+# Read-only health check. Printing and scanning on paper are still manual tests.
+- name: Verify the print and scan server
+  hosts: print_server
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Check the services
+      ansible.builtin.command: "systemctl is-active {{ item }}" # noqa: command-instead-of-module
+      changed_when: false
+      loop: [ssh, cups, avahi-daemon, scanservjs]
+
+    - name: Check the ports
+      ansible.builtin.wait_for:
+        port: "{{ item }}"
+        timeout: 15
+      loop: [631, 8080]
+
+    - name: Check the queue
+      ansible.builtin.command: "lpstat -p {{ printing_queue }}"
+      changed_when: false
+
+    - name: Read board state
+      ansible.builtin.shell: |
+        set -o pipefail
+        echo "kernel   $(uname -r)"
+        echo "cpuidle  $(cat /sys/devices/system/cpu/cpuidle/current_driver 2>/dev/null || echo none)"
+        echo "printer  $(test -e /dev/usb/lp0 && echo connected || echo 'not detected')"
+        echo "held     $(apt-mark showhold | paste -sd ' ')"
+        echo "failed   $(systemctl --failed --plain --no-legend | cut -d' ' -f1 | paste -sd ' ')"
+        for z in /sys/class/thermal/thermal_zone*; do
+          [ -e "$z/temp" ] && echo "temp     $(cat "$z/type") $(cat "$z/temp")"
+        done
+        exit 0
+      args:
+        executable: /bin/bash
+      register: verify_state
+      changed_when: false
+
+    - name: Show board state
+      ansible.builtin.debug:
+        var: verify_state.stdout_lines

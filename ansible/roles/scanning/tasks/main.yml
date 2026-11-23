@@ -1,0 +1,45 @@
+---
+- name: Install SANE and OCR languages
+  ansible.builtin.apt:
+    name: "{{ ['sane-utils', 'imagemagick', 'nodejs', 'tesseract-ocr'] + (scanning_ocr_languages | map('regex_replace', '^', 'tesseract-ocr-') | list) }}"
+
+- name: List installed packages
+  ansible.builtin.package_facts:
+
+- name: Install scanservjs
+  when: >-
+    (ansible_facts.packages['scanservjs'] | default([{'version': ''}]))[0].version
+    != scanning_version
+  block:
+    - name: Create the download directory
+      ansible.builtin.file:
+        path: /var/cache/cubie
+        state: directory
+        mode: "0755"
+
+    # Pinned .deb, instead of `curl bootstrap.sh | sudo bash`
+    - name: Download scanservjs
+      ansible.builtin.get_url:
+        url: "{{ scanning_url }}"
+        dest: "/var/cache/cubie/scanservjs_{{ scanning_version }}.deb"
+        checksum: "sha256:{{ scanning_sha256 }}"
+        mode: "0644"
+
+    - name: Install the scanservjs package
+      ansible.builtin.apt:
+        deb: "/var/cache/cubie/scanservjs_{{ scanning_version }}.deb"
+        install_recommends: false
+
+- name: Run scanservjs
+  ansible.builtin.systemd_service:
+    name: scanservjs
+    enabled: true
+    state: started
+
+- name: Keep the SANE network port closed
+  ansible.builtin.systemd_service:
+    name: saned.socket
+    enabled: false
+    state: stopped
+  register: scanning_saned
+  failed_when: scanning_saned is failed and 'Could not find' not in scanning_saned.msg
