@@ -13,7 +13,7 @@
 
 - [x] Copy old scans (`~/cubie-old-scans`), power off, label and keep the old card
 - [x] [Install](install.md) steps 3 to 6
-- [ ] Acceptance list (step 7), especially 6.40 on paper and a scan
+- [x] Acceptance list (step 7), 2026-11-23: all items pass (flatbed only; scanner lock-up after printer power-on documented)
 - [x] AirSane on the board ([0009](decisions/0009-airsane.md)); the "before" measurement was skipped by the user's choice
 - [ ] AirSane: the phantom ADF locks the scanner; report it to sane-backends ([0011](decisions/0011-no-adf-workaround.md))
 - [x] Phone printing and scanning: Mopria works fine on the Pixel; the built-in Default Print Service is finicky
@@ -78,3 +78,4 @@
 | 2026-11-23 | Acceptance, part: test page and a 2-page duplex job printed (also after the printer's sleep: jobs wake it); laptop finds `_ipp._tcp`. `radxa` added to `adm` (logs without sudo). AirSane deployed (`site.yml` `ok=55 changed=19 failed=0`, no before-measurement): `_uscan._tcp` with platen and ADF, scans work, one unexplained stuck scan (open issues). AGENTS.md: only lasting changes need Ansible |
 | 2026-11-23 | `site.yml --check --diff`: `ok=39 changed=0 failed=0 skipped=26`: the board matches Ansible (after `adm`, AirSane). Android: Mopria prints and scans fine |
 | 2026-11-23 | Board power cycle (21:22): all services up, no failed units; `_ipp`/`_ipps` at once, `_uscan` a few minutes later; test page `radxa-5` printed, scanservjs flatbed scan fine. Printer lock-up after power-on + sleep reproduced twice (21:04, 21:16), recovery rule in `install.md`. Debug logging gone with the reboot. Idle measurement running: board flat, SoC up, **no heatsink**, 65 °C at 5 min uptime |
+| 2026-11-23 | Idle measurement `measurements/2026-11-23-r7-bare.tsv` (board flat, SoC up, no heatsink, no pad, room temperature not recorded): little/big average 65.6/65.7 °C (max 66.8), skin 37.1 °C, busy 0.0 %; big cluster cap 416 to 2002 MHz (average 733). Baseline 2026-11-22 (old card, loose heatsink): 67.0/66.7 °C, big capped at 416 MHz throughout. Not comparable as a cooling test (different card, setup and unknown room temperature); both idle near the throttling range |
