@@ -77,6 +77,7 @@ Unplug Ethernet and check that SSH comes back over WiFi.
 - [ ] Print a test page: `lp -d radxa /usr/share/cups/data/testprint`
 - [ ] Print from a laptop and a phone, try duplex
 - [ ] Scan at <http://radxa-cubie-a7s.local:8080>
+- [ ] eSCL: preview at <http://radxa-cubie-a7s.local:8090>, then scan from a phone or laptop without a driver (flatbed; the MF4320d has no ADF)
 - [ ] Power off, power on, print and scan again
 - [ ] `ansible-playbook site.yml --check --diff` reports `changed=0`
 - [ ] After 30 minutes idle: `scripts/measure.sh > docs/measurements/<date>-r7.tsv`
@@ -89,6 +90,7 @@ Unplug Ethernet and check that SSH comes back over WiFi.
 | No SSH | HDMI adapter (must support DP Alt Mode) in the non-5V USB-C, keyboard in USB-A, log in on the console |
 | No network | Ethernet, then `nmcli device` on the console |
 | No boot, no picture | Card into the laptop: check `/boot/extlinux/extlinux.conf` on partition 3 |
+| Printer display stuck on "SCANNING" | Switch the printer off and on, then **scan once (a preview is enough) before the printer goes to sleep**. Causes: the ADF source, which this model doesn't have, or the first scan after power-on once the printer has slept ([0011](decisions/0011-no-adf-workaround.md), `docs/plan.md`) |
 | Give up | Power off, insert the old card (then `ssh-keygen -R radxa-cubie-a7s.local` again) |
 
 The HDMI console is not tested on r7.

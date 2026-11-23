@@ -6,15 +6,24 @@ Radxa's kernel has no virtual hardware drivers.
 
 ```sh
 nix develop
-tests/vm/build.sh     # images/vm/: disk from images/cubie-a7s-r7.img + Debian cloud kernel (~4 GB)
-tests/vm/run.sh &     # boots; SSH on 127.0.0.1:2222 only
-tests/vm/e2e.sh       # first boot -> site.yml twice -> --check -> reboot -> verify.yml (~60 min)
-kill %1               # stop the VM
+tests/vm/build.sh                    # images/vm/disk.qcow2 from images/cubie-a7s-r7.img + Debian cloud kernel
+tests/vm/e2e.sh                      # full: first boot -> site.yml twice -> reboot -> verify.yml (~60 min)
+tests/vm/e2e.sh --from configured    # after a role change: from the last good full run (~15 min)
+tests/vm/e2e.sh --from firstboot     # everything except the first boot (~50 min)
+tests/vm/run.sh                      # just boot it to look around (Ctrl-C stops QEMU)
 ```
 
-Logs land in `images/vm/`. Each `build.sh` starts from a pristine image.
+`e2e.sh` starts and stops the VM. A full run saves two qcow2 snapshots in the disk: `firstboot`
+(after the image's first boot, laptop key added) and `configured` (after a passing run).
+`--from configured` keeps that snapshot, so it doesn't drift with experiments, but it also doesn't
+show what a fresh image does: run a full one (or `--from firstboot`) before changing the board.
+List snapshots with `qemu-img snapshot -l images/vm/disk.qcow2`.
 
-Covers: first-boot edits, playbook on a fresh image, idempotency, drift check, reboot, services,
+Ports on 127.0.0.1: SSH 2222, CUPS 26310, scanservjs 28080, AirSane 28090.
+
+Logs land in `images/vm/`. Each `build.sh` starts from a pristine image and drops the snapshots.
+
+Covers: first-boot edits, playbook on a fresh image, idempotency (second run `changed=0`), reboot, services,
 ports, the Canon filter (by hand: see the log in `docs/plan.md`).
 
 Does not cover: Radxa's kernel, bootloader, WiFi, CPU idle, USB printer and scanner, temperatures.

@@ -8,6 +8,7 @@ Everything changed from the stock image is in `ansible/`.
 | SSH | `ssh radxa@radxa-cubie-a7s.local` |
 | Printing (CUPS) | <http://radxa-cubie-a7s.local:631>, queue `radxa` |
 | Scanning (scanservjs) | <http://radxa-cubie-a7s.local:8080> |
+| Scanning (eSCL, AirSane) | found by phones and computers; preview at <http://radxa-cubie-a7s.local:8090> |
 | Target OS | Radxa Debian 13 `rsdk-r7` cli + `ansible/site.yml` |
 | Old card | `rsdk-t4`, configured by hand, kept as rollback |
 
@@ -18,7 +19,8 @@ nix develop && cd ansible
 ansible-playbook site.yml --check --diff   # what drifted?
 ansible-playbook site.yml                  # apply
 ansible-playbook verify.yml                # health
-ansible-playbook update.yml                # updates, not kernel or bootloader
+ansible-playbook update.yml                # Debian updates, not kernel or bootloader
+cd .. && scripts/check-versions.sh         # scanservjs, AirSane, Canon: not from APT
 ```
 
 ## Documentation

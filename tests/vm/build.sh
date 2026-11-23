@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build images/vm/disk.img: the prepared r7 image plus Debian's arm64 kernel and modules.
+# Build images/vm/disk.qcow2: the prepared r7 image plus Debian's arm64 kernel and modules.
+# qcow2, so e2e.sh can keep snapshots in it.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
@@ -16,7 +17,7 @@ root_size_mib=3717
 }
 mkdir -p "$work"
 cd "$work"
-rm -rf disk.img root.img cloud.img mods known
+rm -rf disk.img disk.qcow2 root.img cloud.img mods known
 
 if [ ! -f "$cloud" ]; then
   curl -fL -o "$cloud" "$cloud_url/$cloud"
@@ -36,16 +37,18 @@ debug "rdump /usr/lib/modules/$kernel mods"
 
 cp --sparse=always "$img" disk.img
 dd if=disk.img of=root.img bs=1M skip=$root_offset_mib count=$root_size_mib conv=sparse status=none
-{
+(
   echo "mkdir /usr/lib/modules/$kernel"
   cd "mods/$kernel"
   find . -mindepth 1 -type d | sed 's#^\./##' | sort | sed "s#^#mkdir /usr/lib/modules/$kernel/#"
   find . -type f | sed 's#^\./##' | while read -r f; do
     echo "write $PWD/$f /usr/lib/modules/$kernel/$f"
   done
-} >cmds
+) >cmds
 debugfs -w -f cmds root.img >/dev/null 2>&1
 dd if=root.img of=disk.img bs=1M seek=$root_offset_mib conv=notrunc,sparse status=none
 rm -rf root.img cloud.img mods cmds
 truncate -s 12G disk.img
-echo "ready: $work/disk.img (kernel $kernel)"
+qemu-img convert -O qcow2 disk.img disk.qcow2
+rm disk.img
+echo "ready: $work/disk.qcow2 (kernel $kernel)"

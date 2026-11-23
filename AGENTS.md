@@ -23,8 +23,11 @@ eventually declarative (NixOS) if the hardware support allows it.
 
 ## Rules
 
-- **Every change to the board goes through `ansible/`.** No hand edits or ad-hoc installs. The only
-  exceptions are the two secrets in `docs/install.md` (password, WiFi key).
+- **Every lasting change to the board goes through `ansible/`**: anything a fresh install must
+  recreate (packages, config files, services, users). `ansible/` is the declarative, replayable recipe
+  for the server. Temporary diagnostics and one-off actions (a service restart, a debug run, a test
+  scan) can be done by hand, as long as they are undone and leave nothing behind. The two secrets in
+  `docs/install.md` (password, WiFi key) stay out of `ansible/`.
 - Run `ansible-lint` in the dev shell (`nix develop`) after editing `ansible/`.
 - The board is a live device. Read-only inspection is fine. Get the user's OK for each change
   (packages, services, sysfs writes, reboot).
