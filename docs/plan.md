@@ -15,7 +15,7 @@
 - [x] [Install](install.md) steps 3 to 6
 - [x] Acceptance list (step 7), 2026-11-23: all items pass (flatbed only; scanner lock-up after printer power-on documented)
 - [x] AirSane on the board ([0009](decisions/0009-airsane.md)); the "before" measurement was skipped by the user's choice
-- [ ] AirSane: the phantom ADF locks the scanner; report it to sane-backends ([0011](decisions/0011-no-adf-workaround.md))
+- [x] Scanner lock-ups reported upstream: comment on sane-backends #462 ([0011](decisions/0011-no-adf-workaround.md)); phantom-ADF issue drafted, not filed
 - [x] Phone printing and scanning: Mopria works fine on the Pixel; the built-in Default Print Service is finicky
 - [x] Confirm CPU idle on real hardware: `verify.yml` shows a cpuidle driver (`psci_idle`)
 
@@ -36,8 +36,10 @@
   19:48, 20:51, 20:57); later scans, also after sleep, answer at once. The ADF failure (20:25) is the
   same timeout on the same command. So the core bug: pixma can't recover after the start command
   times out. In normal use it bites once after each printer power-on (and power cycling is the only
-  way out, so after a lock-up: power-cycle, then do a first scan before the printer sleeps). Next:
-  file upstream (`docs/upstream-pixma-adf.md`), then turn off the debug logging.
+  way out, so after a lock-up: power-cycle, then do a first scan before the printer sleeps). Upstream: the same timeout is known
+  for the MF4150 ([#462](https://gitlab.com/sane-project/backends/-/issues/462), [#858](https://gitlab.com/sane-project/backends/-/issues/858); no active pixma maintainer);
+  MF4320d data added as a comment on #462 (2026-11-23). The phantom-ADF issue is drafted in
+  `docs/upstream-pixma-adf.md` (not filed). Possibly later: an MR for a longer start timeout (like !1036).
   Debug logging is on in `airsaned` and `scanservjs` (runtime only, gone after a board reboot).
 - **Android print "printer isn't available"** (worked around: use Mopria) (Pixel 8, Android 17, Default Print Service): it finds
   the queue and its options, but greys out Print. CUPS logged `Unable to encrypt connection` at the
