@@ -27,7 +27,9 @@
   directly through `pixma` 0.28.6 (gen 1 imageCLASS), AirSane previews, a 600 dpi colour PDF, and a
   preview right after the printer's sleep (so sleep is not the trigger, measured). Cold scanner:
   up to about 7 of pixma's 8 s start timeout. Debug logging is on at runtime only
-  (`systemctl set-environment SANE_DEBUG_PIXMA=4`, lost at reboot). On the next failure: read
+  (`systemctl set-environment SANE_DEBUG_PIXMA=4`, lost at reboot). Hypothesis: the client chose the
+  "ADF" source that pixma announces but the MF4320d doesn't have (flatbed only); check `source=`
+  in the log. On the next failure: read
   `journalctl -u airsaned` around it (radxa is in `adm`, no sudo needed). Turn it off with
   `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
 - **Android print "printer isn't available"** (Pixel 8, Android 17, Default Print Service): it finds

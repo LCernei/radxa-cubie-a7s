@@ -33,8 +33,9 @@ laptop, for one small C++ daemon.
 - One more port without login on the LAN, like scanservjs on 8080. Never forward it.
 - scanservjs and AirSane share one USB scanner. Hypothesis: two scans at the same moment fail with
   "device busy"; one at a time is fine. To be checked with the scanner.
-- Hypothesis: the MF4320d goes through the `pixma` backend, so the flatbed and the ADF appear to
-  clients. To be checked.
+- Measured: the MF4320d goes through the `pixma` backend (0.28.6, "generation 1" imageCLASS). It
+  announces `is=platen,adf`, but the MF4320d is flatbed only (the ADF starts with the MF4330d), so
+  clients offer an ADF source that cannot work.
 - Updates are manual: `scripts/check-versions.sh` reports new releases; then set the version and
   hash, read the source diff, run `tests/vm/`, then `site.yml`.
 
