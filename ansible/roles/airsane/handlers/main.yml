@@ -1,0 +1,6 @@
+---
+- name: Restart AirSane
+  ansible.builtin.systemd_service:
+    name: airsaned
+    state: restarted
+    daemon_reload: true

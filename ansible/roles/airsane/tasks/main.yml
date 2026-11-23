@@ -1,0 +1,133 @@
+---
+# AirSane: the USB scanner as an eSCL/AirScan scanner (docs/decisions/0009).
+# Not packaged in Debian: built from a pinned source release. Only the build packages that were
+# missing are installed, and they are removed again after the build.
+- name: Install the runtime libraries
+  ansible.builtin.apt:
+    name: [avahi-daemon, libavahi-client3, libjpeg62-turbo, libpng16-16t64, libsane1, libusb-1.0-0, sane-utils]
+
+# So the autoremove after the build keeps them.
+- name: Mark the runtime libraries as wanted
+  ansible.builtin.command: apt-mark manual libavahi-client3 libjpeg62-turbo libpng16-16t64 libsane1 libusb-1.0-0
+  register: airsane_mark
+  # Unchanged ones print "... was already set to manually installed."
+  changed_when: airsane_mark.stdout_lines | reject('search', 'already') | list | length > 0
+
+- name: Read the installed AirSane version
+  ansible.builtin.command: cat /usr/local/share/airsane/version
+  register: airsane_installed
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Build and install AirSane
+  when: airsane_installed.stdout != airsane_version
+  block:
+    - name: List installed packages
+      ansible.builtin.package_facts:
+
+    - name: Choose the missing build packages
+      ansible.builtin.set_fact:
+        airsane_build_missing: "{{ airsane_build_packages | reject('in', ansible_facts.packages) | list }}"
+
+    - name: Install the missing build packages
+      ansible.builtin.apt:
+        name: "{{ airsane_build_missing }}"
+        install_recommends: false
+      when: airsane_build_missing | length > 0
+
+    - name: Create the source directory
+      ansible.builtin.file:
+        path: /var/cache/cubie/airsane
+        state: directory
+        mode: "0755"
+
+    - name: Download the AirSane source
+      ansible.builtin.get_url:
+        url: "{{ airsane_url }}"
+        dest: "/var/cache/cubie/airsane-{{ airsane_version }}.tar.gz"
+        checksum: "sha256:{{ airsane_sha256 }}"
+        mode: "0644"
+
+    - name: Unpack the source
+      ansible.builtin.unarchive:
+        src: "/var/cache/cubie/airsane-{{ airsane_version }}.tar.gz"
+        dest: /var/cache/cubie/airsane
+        remote_src: true
+        extra_opts: [--strip-components=1, --no-same-owner]
+
+    # Two jobs: the board throttles when it is hot, and a full -j8 build gains little.
+    - name: Compile
+      ansible.builtin.shell: |
+        set -euo pipefail
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=MinSizeRel
+        cmake --build build -j2
+      args:
+        chdir: /var/cache/cubie/airsane
+        executable: /bin/bash
+      changed_when: true
+
+    # Not `make install`: it would overwrite /etc/default/airsane and install upstream's unit.
+    - name: Install the program
+      ansible.builtin.copy:
+        src: /var/cache/cubie/airsane/build/airsaned
+        dest: /usr/local/bin/airsaned
+        remote_src: true
+        mode: "0755"
+      notify: Restart AirSane
+
+    - name: Create the version directory
+      ansible.builtin.file:
+        path: /usr/local/share/airsane
+        state: directory
+        mode: "0755"
+
+    - name: Record the installed version
+      ansible.builtin.copy:
+        dest: /usr/local/share/airsane/version
+        content: "{{ airsane_version }}"
+        mode: "0644"
+
+  always:
+    - name: Remove the build packages again
+      ansible.builtin.apt:
+        name: "{{ airsane_build_missing }}"
+        state: absent
+        autoremove: true
+      when: airsane_build_missing | default([]) | length > 0
+
+    - name: Remove the build tree
+      ansible.builtin.file:
+        path: /var/cache/cubie/airsane
+        state: absent
+
+- name: Create the configuration directory
+  ansible.builtin.file:
+    path: /etc/airsane
+    state: directory
+    mode: "0755"
+
+# No match means deny. "local on *" is the subnets of every interface, loopback included; it is
+# read again when the network changes (--network-hotplug).
+- name: Allow only the local network
+  ansible.builtin.copy:
+    dest: /etc/airsane/access.conf
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/airsane)
+      allow local on *
+  notify: Restart AirSane
+
+- name: Install the service
+  ansible.builtin.template:
+    src: airsaned.service.j2
+    dest: /etc/systemd/system/airsaned.service
+    mode: "0644"
+  notify: Restart AirSane
+
+- name: Run AirSane
+  ansible.builtin.systemd_service:
+    name: airsaned
+    enabled: true
+    state: started
+    daemon_reload: true

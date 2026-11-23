@@ -77,6 +77,7 @@ Unplug Ethernet and check that SSH comes back over WiFi.
 - [ ] Print a test page: `lp -d radxa /usr/share/cups/data/testprint`
 - [ ] Print from a laptop and a phone, try duplex
 - [ ] Scan at <http://radxa-cubie-a7s.local:8080>
+- [ ] eSCL: preview at <http://radxa-cubie-a7s.local:8090>, then scan from a phone or laptop without a driver (flatbed and ADF)
 - [ ] Power off, power on, print and scan again
 - [ ] `ansible-playbook site.yml --check --diff` reports `changed=0`
 - [ ] After 30 minutes idle: `scripts/measure.sh > docs/measurements/<date>-r7.tsv`

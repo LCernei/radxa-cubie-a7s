@@ -31,6 +31,20 @@
     update_cache: true
   changed_when: false
 
+# man-db rebuilds its index after every package install: slow on the board and in tests/vm/.
+# The trigger runs only if this file exists; postinst recreates it from the debconf answer.
+- name: Don't rebuild the man page index on package installs
+  ansible.builtin.debconf:
+    name: man-db
+    question: man-db/auto-update
+    vtype: boolean
+    value: "false"
+
+- name: Remove the man-db trigger flag
+  ansible.builtin.file:
+    path: /var/lib/man-db/auto-update
+    state: absent
+
 - name: Install base packages
   ansible.builtin.apt:
     name: "{{ base_packages }}"
@@ -44,7 +58,7 @@
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
 
-# An empty list would import nothing and then remove every key: locked out.
+# Passwords are switched off below: without a listed user, a fresh image has no key that logs in.
 - name: Check the list of GitHub users
   ansible.builtin.assert:
     that:
@@ -53,22 +67,12 @@
     fail_msg: "Set base_github_users in ansible/host_vars/cubie.yml (copy cubie.yml.example)"
     quiet: true
 
-# ssh-import-id only adds keys and tags each one "# ssh-import-id gh:<user>".
-# Import first, so a GitHub failure stops the play before any key is removed.
-- name: Import the SSH keys of the listed GitHub users
-  ansible.builtin.command:
-    argv: "{{ ['ssh-import-id-gh'] + base_github_users }}"
-  become: false
-  register: base_ssh_import
-  changed_when: "'Authorized key' in base_ssh_import.stderr"
-  failed_when: base_ssh_import.rc != 0 or '[0] SSH keys' in base_ssh_import.stderr
-
-- name: Remove SSH keys not imported for a listed GitHub user
-  ansible.builtin.lineinfile:
-    path: "/home/{{ ansible_user }}/.ssh/authorized_keys"
-    regexp: "^(?!.* # ssh-import-id gh:(?:{{ base_github_users | map('regex_escape') | join('|') }})$)"
-    state: absent
-  become: false
+# Adds each user's GitHub keys if missing; keys already on the board stay (docs/decisions/0010).
+- name: Authorize the GitHub keys of the listed users
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user }}"
+    key: "https://github.com/{{ item }}.keys"
+  loop: "{{ base_github_users }}"
 
 - name: Allow only key logins over SSH
   ansible.builtin.copy:
@@ -90,6 +94,13 @@
   ansible.builtin.user:
     name: rock
     state: absent
+
+# Read-only access to the CUPS logs (/var/log/cups, root:adm) and the system journal, without sudo.
+- name: Let the admin user read the logs
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: [adm]
+    append: true
 
 - name: Keep the la alias from the old card
   ansible.builtin.lineinfile:

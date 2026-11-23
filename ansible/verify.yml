@@ -8,13 +8,13 @@
     - name: Check the services
       ansible.builtin.command: "systemctl is-active {{ item }}" # noqa: command-instead-of-module
       changed_when: false
-      loop: [ssh, cups, avahi-daemon, scanservjs]
+      loop: [ssh, cups, avahi-daemon, scanservjs, airsaned]
 
     - name: Check the ports
       ansible.builtin.wait_for:
         port: "{{ item }}"
         timeout: 15
-      loop: [631, 8080]
+      loop: [631, 8080, "{{ airsane_port }}"]
 
     - name: Check the queue
       ansible.builtin.command: "lpstat -p {{ printing_queue }}"
@@ -27,6 +27,8 @@
         echo "cpuidle  $(cat /sys/devices/system/cpu/cpuidle/current_driver 2>/dev/null || echo none)"
         echo "printer  $(test -e /dev/usb/lp0 && echo connected || echo 'not detected')"
         echo "held     $(apt-mark showhold | paste -sd ' ')"
+        echo "airsane  $(cat /usr/local/share/airsane/version 2>/dev/null || echo none)"
+        echo "escl     $(curl -fsS -o /dev/null -w '%{http_code}' http://localhost:{{ airsane_port }}/eSCL/ScannerCapabilities || true)"
         echo "failed   $(systemctl --failed --plain --no-legend | cut -d' ' -f1 | paste -sd ' ')"
         for z in /sys/class/thermal/thermal_zone*; do
           [ -e "$z/temp" ] && echo "temp     $(cat "$z/type") $(cat "$z/temp")"

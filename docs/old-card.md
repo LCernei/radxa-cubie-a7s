@@ -11,7 +11,7 @@ against the `rsdk-t4` manifest. Files readable only by root (`cupsd.conf`, PPD) 
 |---|---|
 | `apt full-upgrade` | `update.yml` |
 | `apt install btop neovim` | base role |
-| `ssh-import-id-gh` for two GitHub users | base role, `base_github_users` ([0008](decisions/0008-github-ssh-keys.md)) |
+| `ssh-import-id-gh` for two GitHub users | base role adds them, `base_github_users` ([0010](decisions/0010-add-github-keys.md)) |
 | `.bashrc`: `alias la='ls -lA'` | base role |
 | `apt install cups cups-client cups-bsd ghostscript` | printing role |
 | `usermod -aG lpadmin radxa` | dropped, admin uses sudo |

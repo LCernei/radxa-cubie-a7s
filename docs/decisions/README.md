@@ -11,4 +11,6 @@ One file per decision. Don't rewrite an accepted one: add a new file that supers
 | [0005](0005-exposure.md) | Fewer users, ports and services | accepted 2026-11-22; key row superseded by 0008 |
 | [0006](0006-cooling.md) | Fix the thermal contact first, then a slow quiet fan | proposed, needs hardware |
 | [0007](0007-nixos.md) | NixOS later, on another card | deferred |
-| [0008](0008-github-ssh-keys.md) | SSH keys from GitHub with `ssh-import-id-gh`, none in the repo | accepted 2026-11-23 |
+| [0008](0008-github-ssh-keys.md) | SSH keys from GitHub with `ssh-import-id-gh`, none in the repo | superseded by 0010 |
+| [0009](0009-airsane.md) | AirSane (eSCL) on port 8090, built from a pinned source release | accepted 2026-11-23, VM-tested, scanner test pending |
+| [0010](0010-add-github-keys.md) | Add the GitHub keys of the listed users, keep other keys | accepted 2026-11-23 |

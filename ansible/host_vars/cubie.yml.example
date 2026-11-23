@@ -1,7 +1,7 @@
 ---
 # Copy to cubie.yml (not in git) and fill in.
-# All SSH keys not imported for the listed GitHub users are removed: at least one must hold the key
-# of the laptop that runs Ansible.
+# Their GitHub keys are added; keys already on the board stay. Password login is switched off,
+# so on a fresh image one of them must hold the key of the laptop that runs Ansible.
 base_timezone: <Region/City> # e.g. Europe/Berlin, see timedatectl list-timezones
 
 # GitHub users whose public keys may log in.

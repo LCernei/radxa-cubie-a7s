@@ -14,7 +14,29 @@
 - [x] Copy old scans (`~/cubie-old-scans`), power off, label and keep the old card
 - [x] [Install](install.md) steps 3 to 6
 - [ ] Acceptance list (step 7), especially 6.40 on paper and a scan
+- [x] AirSane on the board ([0009](decisions/0009-airsane.md)); the "before" measurement was skipped by the user's choice
+- [ ] AirSane: the scanner sometimes stays in "SCANNING" (see the open issue below)
+- [ ] Phone printing works but is finicky on the Pixel (see the open issue below)
 - [x] Confirm CPU idle on real hardware: `verify.yml` shows a cpuidle driver (`psci_idle`)
+
+### Open issues (from 2026-11-23)
+
+- **Scanner stuck in "SCANNING".** The first two AirSane web previews (from another PC, 19:3x) ended
+  `Aborted`, `ResourcesAreNotReady`, after 1 image; the printer display stayed on SCANNING, a restart
+  of `airsaned` didn't clear it, and a power cycle did. Afterwards everything worked: `scanimage`
+  directly through `pixma` 0.28.6 (gen 1 imageCLASS), AirSane previews, a 600 dpi colour PDF, and a
+  preview right after the printer's sleep (so sleep is not the trigger, measured). Cold scanner:
+  up to about 7 of pixma's 8 s start timeout. Debug logging is on at runtime only
+  (`systemctl set-environment SANE_DEBUG_PIXMA=4`, lost at reboot). On the next failure: read
+  `journalctl -u airsaned` around it (radxa is in `adm`, no sudo needed). Turn it off with
+  `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
+- **Android print "printer isn't available"** (Pixel 8, Android 17, Default Print Service): it finds
+  the queue and its options, but greys out Print. CUPS logged `Unable to encrypt connection` at the
+  same moment. After clearing the Default Print Service's storage it printed (20:11, `Print-Job`
+  `successful-ok` in `access_log`), but only after reopening the print dialog: finicky. CUPS logged
+  no errors for the failed attempts, so the cause is on the phone side (hypothesis: Android greys the
+  printer out until its status check or mDNS answer arrives). Next: try Mopria Print Service; try
+  another phone; only if `error_log` shows TLS errors at a failure, consider not advertising IPPS.
 
 ## 3. Cooling (one change per measurement)
 
@@ -26,6 +48,8 @@
 
 ## 4. Later
 
+- [ ] Monthly: `scripts/check-versions.sh` (scanservjs, AirSane, Canon driver: none of them come from APT)
+- [ ] Canon 6.40-1.10 (2026-10-21) is newer than the pinned 6.40-1.05: decide after the paper test with 1.05
 - [ ] One week stable, then decide whether board package updates are wanted ([0004](decisions/0004-board-packages.md))
 - [ ] Smart plug, if printing is rare
 - [ ] NixOS experiment in its own session ([0007](decisions/0007-nixos.md))
@@ -40,3 +64,5 @@
 | 2026-11-22 | VM test, prepared r7 image, Debian arm64 kernel: first boot (SSH on, no `rock`); `site.yml` fresh `ok=42 changed=22`, again `changed=0`, `--check` `changed=0`; reboot; `verify.yml` no failed units. Ports 22, 631, 8080 only; no exim4, cron, cups-browsed, ipp-usb, scanbd, inetd. Queue shared, A4, driverless attributes incl. duplex. Canon 6.40 `rastertoufr2` turned the CUPS test page into 113 KB of UFR II data without errors. `update.yml`: holds restored, WiFi module present for 6.6.98-6. Fixed on the way: first-boot dpkg lock race, empty package lists, exim4 via recommends, slow `service_facts` |
 | 2026-11-23 | Reinstall on a duplicate card (original kept): flash, first boot, two reboots, `site.yml` `ok=42 changed=22 failed=0`, `verify.yml`: `psci_idle`, no failed units after the next reboot (`lightdm`, `plymouth-quit` were first-boot leftovers). WiFi up, SSH over WiFi only, ports 22, 631, 8080. Printer not yet connected: acceptance (step 7) pending |
 | 2026-11-23 | SSH keys from GitHub with `ssh-import-id-gh` instead of pinned files ([0008](decisions/0008-github-ssh-keys.md)). Applied: `authorized_keys` holds only the two tagged GitHub keys. User names moved to untracked `ansible/host_vars/cubie.yml`; MIT license |
+| 2026-11-23 | AirSane role ([0009](decisions/0009-airsane.md)): VM, fresh image `site.yml` `failed=0`, `airsaned` active, web 200 from the host, build packages removed again; second run found `changed=1` (apt-mark), fixed, not re-run. `scripts/check-versions.sh`: Canon 6.40-1.10 is newer than the pinned 1.05. SSH keys: add only ([0010](decisions/0010-add-github-keys.md)), after the old removal locked the VM out. man-db trigger off. `tests/vm/`: qcow2 snapshots (`--from configured`), no `--check` pass, `build.sh` subshell fix. Nothing changed on the board |
+| 2026-11-23 | Acceptance, part: test page and a 2-page duplex job printed (also after the printer's sleep: jobs wake it); laptop finds `_ipp._tcp`. `radxa` added to `adm` (logs without sudo). AirSane deployed (`site.yml` `ok=55 changed=19 failed=0`, no before-measurement): `_uscan._tcp` with platen and ADF, scans work, one unexplained stuck scan (open issues). AGENTS.md: only lasting changes need Ansible |

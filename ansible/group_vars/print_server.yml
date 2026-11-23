@@ -2,8 +2,8 @@
 base_hostname: radxa-cubie-a7s
 base_timezone: Etc/UTC # override in host_vars/cubie.yml
 
-# GitHub users whose public keys may log in (ssh-import-id-gh, docs/decisions/0008).
-# Keys from anyone else are removed. Set in host_vars/cubie.yml (not in git), see the .example.
+# GitHub users whose public keys may log in (docs/decisions/0010). Keys already on the board stay.
+# Set in host_vars/cubie.yml (not in git), see the .example.
 base_github_users: []
 
 base_packages:
@@ -11,7 +11,6 @@ base_packages:
   - etckeeper
   - git
   - neovim
-  - ssh-import-id
   - unattended-upgrades
 
 # Never upgraded implicitly: boot and WiFi depend on them (docs/decisions/0004).
@@ -42,3 +41,19 @@ scanning_version: "3.3.0"
 scanning_url: "https://github.com/sbs20/scanservjs/releases/download/v3.3.0/scanservjs_3.3.0-1_all.deb"
 scanning_sha256: d57a26fa6472651ac5c780a4057ae944361cfcaa7c0b6d07a7856e7ef6b15f75
 scanning_ocr_languages: [eng, ron, rus]
+
+# Source release, built on the board (docs/decisions/0009). Check for news: scripts/check-versions.sh
+airsane_version: "0.4.16"
+airsane_url: https://github.com/SimulPiscator/AirSane/archive/refs/tags/v0.4.16.tar.gz
+airsane_sha256: 98debd9ae88561b0604cf0b8932feea5e5d1a3f02f84aa1a1bcd09becda56d73
+airsane_port: 8090
+# Installed only for the build if missing, then removed again.
+airsane_build_packages:
+  - cmake
+  - g++
+  - libavahi-client-dev
+  - libjpeg62-turbo-dev
+  - libpng-dev
+  - libsane-dev
+  - libusb-1.0-0-dev
+  - make
