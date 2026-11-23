@@ -25,8 +25,8 @@
   source, which `pixma` offers but the MF4320d doesn't have. `source=1`, `Error in response phase.
   cmd:de20`, `abort_session() failed EIO`; only a printer power cycle frees it. Documented, no
   patch ([0011](decisions/0011-no-adf-workaround.md)). Sleep is not a trigger (measured).
-  Next: report upstream (draft: `docs/upstream-pixma-adf.md`, not committed), then turn off the
-  debug logging: `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
+  Next: report upstream (draft: `docs/upstream-pixma-adf.md`, not committed). Debug logging is
+  already off (gone with the board power cycle, 21:22).
 - **First scan after power-on, once the printer has slept, times out** (measured, reproduced
   twice by the user, 21:04 and 21:16: power-cycle the printer, wait for sleep, scan; the carriage
   starts, then stops mid-pass when pixma gives up). The scanner doesn't answer the
@@ -40,7 +40,6 @@
   for the MF4150 ([#462](https://gitlab.com/sane-project/backends/-/issues/462), [#858](https://gitlab.com/sane-project/backends/-/issues/858); no active pixma maintainer);
   MF4320d data added as a comment on #462 (2026-11-23). The phantom-ADF issue is drafted in
   `docs/upstream-pixma-adf.md` (not filed). Possibly later: an MR for a longer start timeout (like !1036).
-  Debug logging is on in `airsaned` and `scanservjs` (runtime only, gone after a board reboot).
 - **Android print "printer isn't available"** (worked around: use Mopria) (Pixel 8, Android 17, Default Print Service): it finds
   the queue and its options, but greys out Print. CUPS logged `Unable to encrypt connection` at the
   same moment. After clearing the Default Print Service's storage it printed (20:11, `Print-Job`
@@ -61,10 +60,10 @@
 ## 4. Later
 
 - [ ] Monthly: `scripts/check-versions.sh` (scanservjs, AirSane, Canon driver: none of them come from APT)
-- [ ] Canon 6.40-1.10 (2026-10-21) is newer than the pinned 6.40-1.05: decide after the paper test with 1.05
+- [x] Canon 6.40-1.10 ([0013](decisions/0013-canon-1.10.md)): paper test with 1.05 passed; 1.10 on the board 2026-11-23
 - [ ] One week stable, then decide whether board package updates are wanted ([0004](decisions/0004-board-packages.md))
 - [ ] Smart plug, if printing is rare
-- [ ] NixOS experiment in its own session ([0007](decisions/0007-nixos.md))
+- [x] ~~NixOS experiment in its own session~~ dropped ([0012](decisions/0012-no-nixos.md)): vendor kernel and WiFi, no serial
 - [ ] Each kernel release: look for `sun60i-a733` in `arch/arm64/boot/dts/allwinner` and `drivers/clk/sunxi-ng`
 
 ## Log
@@ -81,3 +80,6 @@
 | 2026-11-23 | `site.yml --check --diff`: `ok=39 changed=0 failed=0 skipped=26`: the board matches Ansible (after `adm`, AirSane). Android: Mopria prints and scans fine |
 | 2026-11-23 | Board power cycle (21:22): all services up, no failed units; `_ipp`/`_ipps` at once, `_uscan` a few minutes later; test page `radxa-5` printed, scanservjs flatbed scan fine. Printer lock-up after power-on + sleep reproduced twice (21:04, 21:16), recovery rule in `install.md`. Debug logging gone with the reboot. Idle measurement running: board flat, SoC up, **no heatsink**, 65 °C at 5 min uptime |
 | 2026-11-23 | Idle measurement `measurements/2026-11-23-r7-bare.tsv` (board flat, SoC up, no heatsink, no pad, room temperature not recorded): little/big average 65.6/65.7 °C (max 66.8), skin 37.1 °C, busy 0.0 %; big cluster cap 416 to 2002 MHz (average 733). Baseline 2026-11-22 (old card, loose heatsink): 67.0/66.7 °C, big capped at 416 MHz throughout. Not comparable as a cooling test (different card, setup and unknown room temperature); both idle near the throttling range |
+| 2026-11-23 | NixOS dropped for this board ([0012](decisions/0012-no-nixos.md)); stale debug-logging note removed from the open issues. Nothing changed on the board |
+| 2026-11-23 | `check-versions.sh`: board versions ran together (AirSane version file has no final newline), fixed. Run: scanservjs 3.3.0 and AirSane 0.4.16 current; Canon 1.05 on board and pin, 1.10 available; 18 upgradable Debian packages (holds included) |
+| 2026-11-23 | Canon driver 6.40-1.10 ([0013](decisions/0013-canon-1.10.md)), archive read and pinned by SHA-256: `site.yml` `ok=47 changed=4 failed=0`. Queue `radxa` idle, shared, `Canon MF4320-4350`, A4 default; `check-versions.sh` all `ok`. Test page with 1.10 not yet printed |

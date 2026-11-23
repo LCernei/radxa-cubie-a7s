@@ -4,7 +4,7 @@ Documentation and (later) configuration for one Radxa Cubie A7S that serves an o
 i-SENSYS MF4320d printer/scanner over WiFi.
 
 Goals, in order: printing and scanning keep working; less heat and power; current software;
-eventually declarative (NixOS) if the hardware support allows it.
+declarative through Ansible (NixOS dropped for this board, decision 0012).
 
 ## Read first
 

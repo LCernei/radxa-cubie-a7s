@@ -28,9 +28,9 @@ base_unneeded_services:
   - nmbd.service
   - smbd.service
 
-printing_canon_version: "6.40-1.05"
-printing_canon_url: https://gdlp01.c-wss.com/gds/8/0100007658/51/linux-UFRII-drv-v640-m17n-05.tar.gz
-printing_canon_sha256: ff69c541b9e12df716fa649cb5307839bb2a4d9ba05dd93b81435df1f60c7834
+printing_canon_version: "6.40-1.10"
+printing_canon_url: https://gdlp01.c-wss.com/gds/0/0100009240/43/linux-UFRII-drv-v640-m17n-10.tar.gz
+printing_canon_sha256: d688958358ab9d5f86fa66a5477399c448ebb6941820cdfd7368cbb6170337c2
 printing_queue: radxa
 printing_description: Canon i-SENSYS MF4320d
 printing_uri: "cnusbufr2:/dev/usb/lp0"

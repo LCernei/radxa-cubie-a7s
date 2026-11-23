@@ -37,10 +37,12 @@ canon_latest() {
 canon_version() { sed -nE 's/.*-v([0-9])([0-9]+)-m17n-([0-9]+)\.tar\.gz$/\1.\2-1.\3/p' <<<"$1"; }
 
 if [ -n "$board" ]; then
+  # One line per value, whatever the source prints (the AirSane version file has no final newline).
   installed=$(ssh -o ConnectTimeout=10 -o BatchMode=yes "$board" '
-    dpkg-query -W -f="\${Version}\n" scanservjs 2>/dev/null | sed "s/-[^-]*$//" || echo none
-    cat /usr/local/share/airsane/version 2>/dev/null || echo none
-    dpkg-query -W -f="\${Version}\n" cnrdrvcups-ufr2-uk 2>/dev/null || echo none
+    one() { v=$("$@" 2>/dev/null) || v=; echo "${v:-none}"; }
+    v=$(one dpkg-query -W -f="\${Version}" scanservjs); echo "${v%-*}"
+    one cat /usr/local/share/airsane/version
+    one dpkg-query -W -f="\${Version}" cnrdrvcups-ufr2-uk
     apt list --upgradable 2>/dev/null | grep -c / || true
   ') || {
     echo "board $board not reachable (mDNS fails sometimes: retry, or BOARD=radxa@<ip>)" >&2
@@ -81,7 +83,7 @@ row canon "${inst[2]}" "$(pin printing_canon_version)" "${canon_new:-?}"
 
 [ "$(pin printing_canon_version)" != "$canon_new" ] && [ -n "$canon_url" ] &&
   echo "canon: newest archive is $canon_url (pin its sha256 after reading it, docs/decisions/0003)"
-[ "${inst[3]}" != - ] &&
-  echo "debian: ${inst[3]} upgradable package(s) on the board, held board packages included (ansible-playbook update.yml)"
+[ "${inst[3]:--}" != - ] &&
+  echo "debian: ${inst[3]:-} upgradable package(s) on the board, held board packages included (ansible-playbook update.yml)"
 [ -z "$canon_url" ] && echo "canon: could not read $canon_page (page layout changed?)" >&2
 exit $status

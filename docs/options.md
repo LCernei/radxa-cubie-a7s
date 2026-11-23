@@ -47,7 +47,7 @@ Armbian's `main` has a board file for the A7Z, none for the A7S.
 ## Outcome
 
 Option A was chosen as a fresh, tracked install ([decisions](decisions/README.md)); NixOS is
-deferred ([0007](decisions/0007-nixos.md)). The table above and the notes below are the input for
+dropped for this board ([0012](decisions/0012-no-nixos.md)). The table above and the notes below are the input for
 revisiting that. Path then: boot a DockSeed Debian image on a spare card first (does that stack
 work with 4 GB, WiFi and USB?), E on 6.18 if it does, D if not.
 
