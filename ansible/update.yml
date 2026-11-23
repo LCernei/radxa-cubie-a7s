@@ -1,0 +1,45 @@
+---
+# Normal updates:            ansible-playbook update.yml
+# Kernel, bootloader pkg, WiFi driver (back up the card first):
+#                            ansible-playbook update.yml -e update_board=true
+# Never reboots and never writes the bootloader to the card.
+- name: Update the server
+  hosts: print_server
+  tasks:
+    - name: List installed packages
+      ansible.builtin.package_facts:
+
+    - name: Upgrade
+      block:
+        - name: Release the board packages
+          ansible.builtin.dpkg_selections:
+            name: "{{ item }}"
+            selection: install
+          loop: "{{ base_board_packages }}"
+          when: update_board | default(false) | bool and item in ansible_facts.packages
+
+        - name: Upgrade packages
+          ansible.builtin.apt:
+            update_cache: true
+            upgrade: safe
+            force_apt_get: true
+
+        - name: Check that every bootable kernel has the WiFi driver
+          ansible.builtin.shell: |
+            rc=0
+            for k in /boot/vmlinuz-*; do
+              v=${k#/boot/vmlinuz-}
+              if ! modinfo -k "$v" aic8800_fdrv_usb >/dev/null 2>&1; then
+                echo "no WiFi driver for $v: do not reboot"
+                rc=1
+              fi
+            done
+            exit $rc
+          changed_when: false
+      always:
+        - name: Hold the board packages again
+          ansible.builtin.dpkg_selections:
+            name: "{{ item }}"
+            selection: hold
+          loop: "{{ base_board_packages }}"
+          when: item in ansible_facts.packages

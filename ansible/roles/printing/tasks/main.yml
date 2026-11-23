@@ -1,0 +1,123 @@
+---
+# cups-browsed only discovers other printers and has a bad security history.
+# ipp-usb is for printers that speak IPP over USB; the MF4320d does not.
+- name: Keep unneeded CUPS add-ons out
+  ansible.builtin.copy:
+    dest: /etc/apt/preferences.d/no-cups-extras
+    mode: "0644"
+    content: |
+      Package: cups-browsed ipp-usb
+      Pin: release *
+      Pin-Priority: -1
+
+- name: Install CUPS
+  ansible.builtin.apt:
+    name: [avahi-daemon, cups, cups-bsd, cups-client, cups-filters, ghostscript]
+
+- name: List installed packages
+  ansible.builtin.package_facts:
+
+- name: Install the Canon UFR II driver
+  when: >-
+    (ansible_facts.packages['cnrdrvcups-ufr2-uk'] | default([{'version': ''}]))[0].version
+    != printing_canon_version
+  block:
+    - name: Create the download directory
+      ansible.builtin.file:
+        path: /var/cache/cubie/canon
+        state: directory
+        mode: "0755"
+
+    - name: Download the driver from Canon
+      ansible.builtin.get_url:
+        url: "{{ printing_canon_url }}"
+        dest: /var/cache/cubie/canon.tar.gz
+        checksum: "sha256:{{ printing_canon_sha256 }}"
+        mode: "0644"
+
+    - name: Unpack the driver
+      ansible.builtin.unarchive:
+        src: /var/cache/cubie/canon.tar.gz
+        dest: /var/cache/cubie/canon
+        remote_src: true
+        extra_opts: [--strip-components=1, --no-same-owner]
+
+    # The .deb directly, instead of Canon's interactive install.sh
+    - name: Install the driver package
+      ansible.builtin.apt:
+        deb: "/var/cache/cubie/canon/ARM64/Debian/cnrdrvcups-ufr2-uk_{{ printing_canon_version }}_arm64.deb"
+      register: printing_driver
+
+- name: Run CUPS
+  ansible.builtin.systemd_service:
+    name: cups
+    enabled: true
+    state: started
+
+- name: Read CUPS sharing settings
+  ansible.builtin.command: cupsctl
+  register: printing_cupsctl
+  changed_when: false
+  check_mode: false
+
+- name: Share on the local subnet, without remote administration
+  ansible.builtin.command: cupsctl --share-printers --no-remote-admin --no-remote-any
+  when: >-
+    '_share_printers=1' not in printing_cupsctl.stdout
+    or '_remote_admin=0' not in printing_cupsctl.stdout
+    or '_remote_any=0' not in printing_cupsctl.stdout
+  changed_when: true
+
+- name: Wait for CUPS
+  ansible.builtin.wait_for:
+    port: 631
+    timeout: 60
+
+- name: Read the print queue
+  ansible.builtin.command: "lpstat -v {{ printing_queue }}"
+  register: printing_device
+  changed_when: false
+  check_mode: false
+  failed_when: false
+
+- name: Create the print queue
+  ansible.builtin.command:
+    argv:
+      - lpadmin
+      - -p
+      - "{{ printing_queue }}"
+      - -E
+      - -v
+      - "{{ printing_uri }}"
+      - -m
+      - "{{ printing_ppd }}"
+      - -D
+      - "{{ printing_description }}"
+      - -o
+      - printer-is-shared=true
+      - -o
+      - printer-error-policy=retry-job
+  when: printing_uri not in printing_device.stdout or printing_driver is changed
+  changed_when: true
+
+- name: Read queue options
+  ansible.builtin.command: "lpoptions -p {{ printing_queue }} -l"
+  register: printing_options
+  changed_when: false
+  check_mode: false
+
+- name: Set the paper size
+  ansible.builtin.command: "lpadmin -p {{ printing_queue }} -o PageSize={{ printing_page_size }}"
+  when: printing_options.stdout is not search('PageSize/.*\*' ~ printing_page_size ~ '( |$)', multiline=True)
+  changed_when: true
+
+- name: Read the default printer
+  ansible.builtin.command: lpstat -d
+  register: printing_default
+  changed_when: false
+  check_mode: false
+
+- name: Make it the default printer
+  ansible.builtin.command: "lpadmin -d {{ printing_queue }}"
+  when: "not printing_default.stdout.endswith(': ' ~ printing_queue)"
+  changed_when: true

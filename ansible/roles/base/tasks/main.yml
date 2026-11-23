@@ -1,0 +1,122 @@
+---
+- name: Set the hostname
+  ansible.builtin.hostname:
+    name: "{{ base_hostname }}"
+
+- name: Make the hostname resolve locally
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1\t{{ base_hostname }}"
+
+- name: Set the timezone
+  community.general.timezone:
+    name: "{{ base_timezone }}"
+
+- name: Hold kernel, bootloader and WiFi driver packages
+  block:
+    - name: List installed packages
+      ansible.builtin.package_facts:
+
+    - name: Hold board packages
+      ansible.builtin.dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop: "{{ base_board_packages }}"
+      when: item in ansible_facts.packages
+
+- name: Refresh package lists
+  # No cache_valid_time: a fresh image has empty lists with a recent timestamp.
+  ansible.builtin.apt:
+    update_cache: true
+  changed_when: false
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ base_packages }}"
+    install_recommends: false # they pull in exim4 and cron
+
+- name: Enable automatic Debian security updates
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    mode: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+# An empty list would import nothing and then remove every key: locked out.
+- name: Check the list of GitHub users
+  ansible.builtin.assert:
+    that:
+      - base_github_users | length > 0
+      - base_github_users | select('match', '^[A-Za-z0-9-]+$') | list == base_github_users
+    fail_msg: "Set base_github_users in ansible/host_vars/cubie.yml (copy cubie.yml.example)"
+    quiet: true
+
+# ssh-import-id only adds keys and tags each one "# ssh-import-id gh:<user>".
+# Import first, so a GitHub failure stops the play before any key is removed.
+- name: Import the SSH keys of the listed GitHub users
+  ansible.builtin.command:
+    argv: "{{ ['ssh-import-id-gh'] + base_github_users }}"
+  become: false
+  register: base_ssh_import
+  changed_when: "'Authorized key' in base_ssh_import.stderr"
+  failed_when: base_ssh_import.rc != 0 or '[0] SSH keys' in base_ssh_import.stderr
+
+- name: Remove SSH keys not imported for a listed GitHub user
+  ansible.builtin.lineinfile:
+    path: "/home/{{ ansible_user }}/.ssh/authorized_keys"
+    regexp: "^(?!.* # ssh-import-id gh:(?:{{ base_github_users | map('regex_escape') | join('|') }})$)"
+    state: absent
+  become: false
+
+- name: Allow only key logins over SSH
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/10-keys-only.conf
+    mode: "0644"
+    content: |
+      # Managed by Ansible
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+  notify: Reload SSH
+
+- name: Check the SSH configuration
+  ansible.builtin.command: /usr/sbin/sshd -t
+  changed_when: false
+  check_mode: false
+
+- name: Remove the image's second sudo user
+  ansible.builtin.user:
+    name: rock
+    state: absent
+
+- name: Keep the la alias from the old card
+  ansible.builtin.lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    regexp: "^#?alias la="
+    line: "alias la='ls -lA'"
+
+- name: Boot without a graphical target
+  ansible.builtin.file:
+    src: /usr/lib/systemd/system/multi-user.target
+    dest: /etc/systemd/system/default.target
+    state: link
+    force: true
+
+# Not service_facts: it queries every unit one at a time.
+- name: Find which unneeded services exist
+  ansible.builtin.command:
+    argv: "{{ ['systemctl', 'list-unit-files', '--no-legend', '--no-pager'] + base_unneeded_services }}"
+  register: base_units
+  changed_when: false
+  failed_when: base_units.rc not in [0, 1]
+  check_mode: false
+
+- name: Disable services this server does not use
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop: "{{ base_unneeded_services }}"
+  when: item in base_units.stdout

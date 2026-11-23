@@ -1,0 +1,7 @@
+/images/
+/.direnv/
+/result
+*.img
+*.img.zst
+*.retry
+/ansible/host_vars/*.yml
