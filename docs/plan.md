@@ -27,6 +27,15 @@
   patch ([0011](decisions/0011-no-adf-workaround.md)). Sleep is not a trigger (measured).
   Next: report upstream (draft: `docs/upstream-pixma-adf.md`, not committed), then turn off the
   debug logging: `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
+- **First scan after the printer is switched on can time out** (hypothesis, 2026-11-23). A flatbed
+  scanservjs scan (150 dpi colour) at 20:45, the first since a power cycle at 20:28, failed after
+  15 s with `sane_read: Error during device I/O` and locked the scanner like the ADF does (no debug
+  log for it). The first scans after a power cycle wait 6 to 7 of pixma's 8 s for the scanner
+  (19:48, 20:51, measured); later scans and scans after sleep don't wait (measured). The 8 s is
+  hard-coded (`s->rec_tmo = 8` in `pixma_open()`, read from source), so no setting can raise it.
+  Rare in normal use (the printer stays on); after a power cycle the next scan may fail once more.
+  Debug logging stays on in `airsaned` and `scanservjs` (runtime only) to confirm: look for the
+  countdown reaching "1 sec" before `Error in response phase`. Added to the upstream draft.
 - **Android print "printer isn't available"** (worked around: use Mopria) (Pixel 8, Android 17, Default Print Service): it finds
   the queue and its options, but greys out Print. CUPS logged `Unable to encrypt connection` at the
   same moment. After clearing the Default Print Service's storage it printed (20:11, `Print-Job`
