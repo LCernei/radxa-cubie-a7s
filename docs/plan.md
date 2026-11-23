@@ -15,23 +15,18 @@
 - [x] [Install](install.md) steps 3 to 6
 - [ ] Acceptance list (step 7), especially 6.40 on paper and a scan
 - [x] AirSane on the board ([0009](decisions/0009-airsane.md)); the "before" measurement was skipped by the user's choice
-- [ ] AirSane: the scanner sometimes stays in "SCANNING" (see the open issue below)
+- [ ] AirSane: the phantom ADF locks the scanner; report it to sane-backends ([0011](decisions/0011-no-adf-workaround.md))
 - [ ] Phone printing works but is finicky on the Pixel (see the open issue below)
 - [x] Confirm CPU idle on real hardware: `verify.yml` shows a cpuidle driver (`psci_idle`)
 
 ### Open issues (from 2026-11-23)
 
-- **Scanner stuck in "SCANNING".** The first two AirSane web previews (from another PC, 19:3x) ended
-  `Aborted`, `ResourcesAreNotReady`, after 1 image; the printer display stayed on SCANNING, a restart
-  of `airsaned` didn't clear it, and a power cycle did. Afterwards everything worked: `scanimage`
-  directly through `pixma` 0.28.6 (gen 1 imageCLASS), AirSane previews, a 600 dpi colour PDF, and a
-  preview right after the printer's sleep (so sleep is not the trigger, measured). Cold scanner:
-  up to about 7 of pixma's 8 s start timeout. Debug logging is on at runtime only
-  (`systemctl set-environment SANE_DEBUG_PIXMA=4`, lost at reboot). Hypothesis: the client chose the
-  "ADF" source that pixma announces but the MF4320d doesn't have (flatbed only); check `source=`
-  in the log. On the next failure: read
-  `journalctl -u airsaned` around it (radxa is in `adm`, no sudo needed). Turn it off with
-  `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
+- **Scanner stuck in "SCANNING": cause found** (measured 20:25): a scan with the "Feeder"/"ADF"
+  source, which `pixma` offers but the MF4320d doesn't have. `source=1`, `Error in response phase.
+  cmd:de20`, `abort_session() failed EIO`; only a printer power cycle frees it. Documented, no
+  patch ([0011](decisions/0011-no-adf-workaround.md)). Sleep is not a trigger (measured).
+  Next: report upstream (draft: `docs/upstream-pixma-adf.md`, not committed), then turn off the
+  debug logging: `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
 - **Android print "printer isn't available"** (Pixel 8, Android 17, Default Print Service): it finds
   the queue and its options, but greys out Print. CUPS logged `Unable to encrypt connection` at the
   same moment. After clearing the Default Print Service's storage it printed (20:11, `Print-Job`

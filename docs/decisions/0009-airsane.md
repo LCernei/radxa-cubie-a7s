@@ -35,7 +35,8 @@ laptop, for one small C++ daemon.
   "device busy"; one at a time is fine. To be checked with the scanner.
 - Measured: the MF4320d goes through the `pixma` backend (0.28.6, "generation 1" imageCLASS). It
   announces `is=platen,adf`, but the MF4320d is flatbed only (the ADF starts with the MF4330d), so
-  clients offer an ADF source that cannot work.
+  clients offer an ADF source that cannot work, and choosing it locks the scanner until a power
+  cycle (see [0011](0011-no-adf-workaround.md)).
 - Updates are manual: `scripts/check-versions.sh` reports new releases; then set the version and
   hash, read the source diff, run `tests/vm/`, then `site.yml`.
 

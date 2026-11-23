@@ -8,7 +8,7 @@
 | Storage | microSD only (32 GB card); no eMMC fitted. Boot order: microSD, then eMMC |
 | WiFi/BT | AIC8800D80 on USB, behind the onboard WCH hub (`1a86:8091`); vendor DKMS driver, no mainline driver |
 | Ethernet | 1 GbE, `end0` |
-| USB-A | 2.0: the printer |
+| USB-A | 2.0: the printer, Canon i-SENSYS MF4320d (`04a9:26ee`, "MF4320-4350"): laser printer with duplex, flatbed scanner, **no ADF** |
 | USB-C 1 | marked 5V, next to the colored header: power in (5 V, 3 A or more), no video |
 | USB-C 2 | USB 3, DisplayPort Alt Mode: the USB-C to HDMI adapter |
 | Fan header J7 | 0.8 mm pitch, 1 GND, 2 PWM (PJ27, kernel drives 40 kHz), 3 +5 V; no tachometer |
@@ -25,4 +25,6 @@ Quirks seen so far:
 
 - No USB serial adapter here, so no boot console: recovery is Ethernet, the HDMI console, or the card in a reader.
 - `radxa-cubie-a7s.local` sometimes fails to resolve. WiFi power save is a possible cause (hypothesis).
+- The scanner driver (`pixma`) wrongly lists an ADF for the MF4320d. Choosing it locks the scanner on
+  "SCANNING" until the printer is power-cycled ([0011](decisions/0011-no-adf-workaround.md)).
 - No power sensor on the board. A USB-C meter is the only way to measure draw.
