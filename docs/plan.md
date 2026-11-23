@@ -28,7 +28,8 @@
   Next: report upstream (draft: `docs/upstream-pixma-adf.md`, not committed), then turn off the
   debug logging: `sudo systemctl unset-environment SANE_DEBUG_PIXMA && sudo systemctl restart airsaned`.
 - **First scan after power-on, once the printer has slept, times out** (measured, reproduced
-  21:04 by the user: power-cycle the printer, wait for sleep, scan). The scanner doesn't answer the
+  twice by the user, 21:04 and 21:16: power-cycle the printer, wait for sleep, scan; the carriage
+  starts, then stops mid-pass when pixma gives up). The scanner doesn't answer the
   start command (`de20`) within pixma's fixed 8 s (`s->rec_tmo = 8` in `pixma_open()`, read from
   source): countdown to "1 sec", `Error in response phase. cmd:de20`, `abort_session() failed EIO`,
   and the scanner is locked until a power cycle. First scans before sleep just make it (about 7.7 s:
@@ -36,7 +37,7 @@
   same timeout on the same command. So the core bug: pixma can't recover after the start command
   times out. In normal use it bites once after each printer power-on (and power cycling is the only
   way out, so after a lock-up: power-cycle, then do a first scan before the printer sleeps). Next:
-  user repeats once to rule out a fluke; then file upstream with this log.
+  file upstream (`docs/upstream-pixma-adf.md`), then turn off the debug logging.
   Debug logging is on in `airsaned` and `scanservjs` (runtime only, gone after a board reboot).
 - **Android print "printer isn't available"** (worked around: use Mopria) (Pixel 8, Android 17, Default Print Service): it finds
   the queue and its options, but greys out Print. CUPS logged `Unable to encrypt connection` at the

@@ -90,7 +90,7 @@ Unplug Ethernet and check that SSH comes back over WiFi.
 | No SSH | HDMI adapter (must support DP Alt Mode) in the non-5V USB-C, keyboard in USB-A, log in on the console |
 | No network | Ethernet, then `nmcli device` on the console |
 | No boot, no picture | Card into the laptop: check `/boot/extlinux/extlinux.conf` on partition 3 |
-| Printer display stuck on "SCANNING" | Switch the printer off and on (someone chose the ADF source, which this model doesn't have: [0011](decisions/0011-no-adf-workaround.md)) |
+| Printer display stuck on "SCANNING" | Switch the printer off and on, then **scan once (a preview is enough) before the printer goes to sleep**. Causes: the ADF source, which this model doesn't have, or the first scan after power-on once the printer has slept ([0011](decisions/0011-no-adf-workaround.md), `docs/plan.md`) |
 | Give up | Power off, insert the old card (then `ssh-keygen -R radxa-cubie-a7s.local` again) |
 
 The HDMI console is not tested on r7.
